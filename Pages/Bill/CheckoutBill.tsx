@@ -12,8 +12,7 @@ interface CheckoutBillProps {
 }
 
 function CheckoutBill({ db }: CheckoutBillProps) {
- 
-  const { billId } = useParams<{ billId: string }>();
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const dispatch = useDispatch();
     
@@ -33,7 +32,7 @@ function CheckoutBill({ db }: CheckoutBillProps) {
 
   const onSubmit = async (data: Bill) => {
     try {
-      await dispatch(closeBill(db, billId, data));
+      await dispatch(closeBill(db, id, data));
       navigate('/bills/open');
     } catch (error) {
       console.error('Erro ao encerrar a comanda:', error);

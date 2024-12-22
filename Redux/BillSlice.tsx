@@ -1,6 +1,6 @@
 import { createSlice, PayloadAction, configureStore } from '@reduxjs/toolkit';
-import { Firestore } from 'firebase/firestore';
-import { listenToCollection, updateDocument } from '../FirebaseService';
+import { Firestore, writeBatch, doc } from 'firebase/firestore';
+import { createDocument, updateDocument } from '../FirebaseService';
 import { Bill } from '../Models/BillSchema';
 
 interface BillState {
@@ -17,8 +17,6 @@ const initialState: BillState = {
   loading: true,
 };
 
-//usar function ao inves de arrow function para poder usar o this
-
 const billSlice = createSlice({
   name: 'bill',
   initialState,
@@ -34,6 +32,11 @@ const billSlice = createSlice({
     },
     setLoading: (state, action: PayloadAction<boolean>) => {
       state.loading = action.payload;
+    },
+    clearBillState: (state) => {
+      state.items = [];
+      state.bill = null;
+      state.loading = true;
     },
     calculateSubtotal: (state) => {
       if (state.bill) {
@@ -57,51 +60,33 @@ const billSlice = createSlice({
   },
 });
 
-export const { setItems, setBill, setOpenBills, setLoading, calculateSubtotal, calculateFinalValue } = billSlice.actions;
+export const { setItems, setBill, setOpenBills, setLoading, clearBillState, calculateSubtotal, calculateFinalValue } = billSlice.actions;
 
-//fazer import do where e do orderBy para fazer a query 
-//import { collection, query, where, orderBy } from "firebase/firestore";
-//faça a função abaixo com isso
-// export const fetchOpenBills = (db: Firestore) => async (dispatch: any) => {
-//   dispatch(setLoading(true));
-//   const q = query(collection(db, "bills"), where("status", "==", "Open"), orderBy("createdAt"));
-//   const bills = await getDocs(q);
-//   dispatch(setOpenBills(bills.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-//   dispatch(setLoading(false));
-
-
-
-
-
-export const fetchOpenBills = (db: Firestore) => async (dispatch: any) => {
-  dispatch(setLoading(true));
-  listenToCollection(db, 'bills', (data) => {
-    const openBills = data.filter((bill: Bill) => bill.status === 'Open');
-    dispatch(setOpenBills(openBills));
-    dispatch(setLoading(false));
-  });
-};
-
-export const fetchBillDetails = (db: Firestore, billId: string) => async (dispatch: any) => {
-  dispatch(setLoading(true));
-  listenToCollection(db, `bills/${billId}/items`, (data) => {
-    dispatch(setItems(data));
-    dispatch(calculateSubtotal());
-    dispatch(setLoading(false));
-  });
-  listenToCollection(db, 'bills', (data) => {
-    const currentBill = data.find((b: Bill) => b.id === billId);
-    if (currentBill) {
-      dispatch(setBill(currentBill));
-    }
-  });
+export const createBill = (db: Firestore, bill: Bill) => async (dispatch: any) => {
+  const batch = writeBatch(db);
+  try {
+    const billRef = doc(db, 'bills', bill.id);
+    const tableRef = doc(db, 'tables', String(bill.tableId));
+    batch.set(billRef, bill);
+    batch.update(tableRef, { status: 'Occupied' });
+    await batch.commit();
+    console.log(`Comanda criada para a mesa ${bill.tableId} com sucesso.`);
+  } catch (error) {
+    console.error("Erro ao criar a comanda:", error);
+    throw new Error("Falha ao criar a comanda.");
+  }
 };
 
 export const closeBill = (db: Firestore, billId: string, data: Bill) => async (dispatch: any) => {
+  const batch = writeBatch(db);
   try {
-    data.status = 'Paid';
-    await updateDocument(db, 'bills', billId, data);
+    const billRef = doc(db, 'bills', billId);
+    const tableRef = doc(db, 'tables', String(data.tableId));
+    batch.update(billRef, { ...data, status: 'Paid' });
+    batch.update(tableRef, { status: 'Free' });
+    await batch.commit();
     console.log(`Comanda ${billId} encerrada com sucesso.`);
+    dispatch(clearBillState());
   } catch (error) {
     console.error("Erro ao encerrar a comanda:", error);
     throw new Error("Falha ao encerrar a comanda.");

@@ -1,11 +1,48 @@
-import React from 'react';
-import { useSelector } from 'react-redux';
+import React, { useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
 import { Container, Grid, Card, CardContent, Typography, Button, CircularProgress } from '@mui/material';
+import { setBill, setItems, setLoading, calculateSubtotal, cancelItem } from '../../Redux/BillSlice';
+import { listenToCollection } from '../../FirebaseService';
+import { Firestore } from 'firebase/firestore';
+import { Bill } from '../../Models/BillSchema';
 
-function BillDetails() {
+interface BillDetailsProps {
+  db: Firestore;
+}
+
+function BillDetails({ db }: BillDetailsProps) {
+  const { id } = useParams<{ id: string }>();
+  const dispatch = useDispatch();
   const bill = useSelector((state: any) => state.bill.bill);
   const items = useSelector((state: any) => state.bill.items);
   const loading = useSelector((state: any) => state.bill.loading);
+
+  useEffect(() => {
+    dispatch(setLoading(true));
+
+    const unsubscribeItems = listenToCollection(db, `bills/${id}/items`, (data) => {
+      dispatch(setItems(data));
+      dispatch(calculateSubtotal());
+      dispatch(setLoading(false));
+    });
+
+    const unsubscribeBill = listenToCollection(db, 'bills', (data) => {
+      const currentBill = data.find((b: Bill) => b.id === id);
+      if (currentBill) {
+        dispatch(setBill(currentBill));
+      }
+    });
+
+    return () => {
+      unsubscribeItems();
+      unsubscribeBill();
+    };
+  }, [dispatch, db, id]);
+
+  const handleCancelItem = async (itemId: string) => {
+    dispatch(cancelItem(db, itemId, id));
+  };
 
   if (loading) {
     return <CircularProgress />;

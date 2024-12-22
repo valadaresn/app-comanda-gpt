@@ -1,28 +1,36 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Box, Grid, CircularProgress } from "@mui/material";
 import TableCard from "./TableCard";
-import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { fetchOpenBills, setBill } from '../../Redux/BillSlice';
+import { listenToCollection } from '../../FirebaseService';
+import { Firestore, where, orderBy } from 'firebase/firestore';
 
 interface OpenBillsProps {
+  db: Firestore;
   backgroundColor: string;
   textColor: string;
   destinationUrl: string; // URL base para navegação ao clicar em uma comanda
 }
 
-function OpenBills({ backgroundColor, textColor, destinationUrl }: OpenBillsProps) {
-  const dispatch = useDispatch();
+function OpenBills({ db, backgroundColor, textColor, destinationUrl }: OpenBillsProps) {
   const navigate = useNavigate();
-  const openBills = useSelector((state: any) => state.bill.openBills);
-  const loading = useSelector((state: any) => state.bill.loading);
+  const [openBills, setOpenBills] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    dispatch(fetchOpenBills());
-  }, [dispatch]);
+    const unsubscribe = listenToCollection(db,'bills',(data) => {
+        setOpenBills(data);
+        setLoading(false);
+      },
+      [where("status", "==", "Open"), orderBy("createdAt")]
+    );
+
+    return () => {
+      unsubscribe();
+    };
+  }, [db]);
 
   const handleSelectBill = (bill: any) => {
-    dispatch(setBill(bill));
     navigate(`${destinationUrl}/${bill.id}`);
   };
 
