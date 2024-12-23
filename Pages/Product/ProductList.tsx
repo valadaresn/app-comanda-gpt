@@ -2,9 +2,10 @@ import React, { useEffect, useState } from "react";
 import { List, ListItem, ListItemText, Checkbox, ListItemIcon, Typography, Box, Chip, CircularProgress } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import { useNavigate } from "react-router-dom";
-import { listenToCollection, updateDocument } from "../FirebaseService";
+import { listenToCollection, updateDocument } from "../../FirebaseService";
+import { collectionNames } from "../../firebaseConfig";
 
-function ProductList({ db }) {
+function ProductList() {
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("");
@@ -12,14 +13,14 @@ function ProductList({ db }) {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const unsubscribeCategories = listenToCollection(db, "categories", (data) => {
+    const unsubscribeCategories = listenToCollection(collectionNames.categories, (data) => {
       setCategories(data);
       if (data.length > 0) {
         setSelectedCategory(data[0].id); // Seleciona a primeira categoria por padrão
       }
     });
 
-    const unsubscribeProducts = listenToCollection(db, "products", (data) => {
+    const unsubscribeProducts = listenToCollection(collectionNames.products, (data) => {
       setProducts(data);
       setLoading(false);
     });
@@ -28,7 +29,7 @@ function ProductList({ db }) {
       unsubscribeCategories();
       unsubscribeProducts();
     };
-  }, [db]);
+  }, []);
 
   const handleCategoryChange = (categoryId) => {
     setSelectedCategory(categoryId);
@@ -36,7 +37,7 @@ function ProductList({ db }) {
 
   const handleToggleMenuStatus = async (product) => {
     try {
-      await updateDocument(db, "products", product.id, { inMenu: !product.inMenu });
+      await updateDocument(collectionNames.products, product.id, { inMenu: !product.inMenu });
     } catch (error) {
       console.error("Erro ao atualizar produto:", error);
     }
@@ -47,7 +48,7 @@ function ProductList({ db }) {
   };
 
   const handleEditProduct = (product) => {
-    navigate(`/products/edit/${product.id}`, { state: { categoryId: product.categoryId } });
+    navigate(`/products/edit/${product.id}`);
   };
 
   if (loading) {

@@ -1,18 +1,19 @@
 import React, { useState, useEffect } from "react";
 import { List, ListItem, ListItemText, Container, Typography } from "@mui/material";
-import { listenToCollection, updateDocument } from "../FirebaseService";
+import { listenToCollection, updateDocument } from "../../FirebaseService";
+import { collectionNames } from "../../firebaseConfig";
 
-function CategoryList({ db }) {
+function CategoryList() {
   const [categories, setCategories] = useState([]);
   const [draggedIndex, setDraggedIndex] = useState(null); // Para identificar o item arrastado
 
   useEffect(() => {
-    const unsubscribe = listenToCollection(db, "categories", (data) => {
+    const unsubscribe = listenToCollection(collectionNames.categories, (data) => {
       const sortedData = data.sort((a, b) => a.order - b.order);
       setCategories(sortedData);
     });
     return () => unsubscribe();
-  }, [db]);
+  }, []);
 
   const handleDragStart = (e, index) => {
     setDraggedIndex(index); // Armazena o índice do item arrastado
@@ -39,7 +40,7 @@ function CategoryList({ db }) {
 
     // Atualiza o Firebase
     for (const category of reorderedCategories) {
-      await updateDocument(db, "categories", category.id, { order: category.order });
+      await updateDocument(collectionNames.categories, category.id, { order: category.order });
     }
 
     setDraggedIndex(null); // Limpa o índice do item arrastado

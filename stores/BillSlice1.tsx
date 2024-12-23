@@ -1,7 +1,8 @@
 import { createSlice, PayloadAction, configureStore } from '@reduxjs/toolkit';
-import { Firestore, writeBatch, doc } from 'firebase/firestore';
-import { createDocument, updateDocument } from '../FirebaseService';
-import { Bill } from '../Models/BillSchema';
+import { writeBatch, doc } from 'firebase/firestore';
+import { createDocument, updateDocument } from '../services/FirebaseService';
+import { Bill } from '../models/BillSchema';
+import { defaultDb } from '../config/firebaseConfig';
 
 interface BillState {
   items: any[];
@@ -62,11 +63,11 @@ const billSlice = createSlice({
 
 export const { setItems, setBill, setOpenBills, setLoading, clearBillState, calculateSubtotal, calculateFinalValue } = billSlice.actions;
 
-export const createBill = (db: Firestore, bill: Bill) => async (dispatch: any) => {
-  const batch = writeBatch(db);
+export const createBill = (bill: Bill) => async (dispatch: any) => {
+  const batch = writeBatch(defaultDb);
   try {
-    const billRef = doc(db, 'bills', bill.id);
-    const tableRef = doc(db, 'tables', String(bill.tableId));
+    const billRef = doc(defaultDb, 'bills', bill.id);
+    const tableRef = doc(defaultDb, 'tables', String(bill.tableId));
     batch.set(billRef, bill);
     batch.update(tableRef, { status: 'Occupied' });
     await batch.commit();
@@ -77,11 +78,11 @@ export const createBill = (db: Firestore, bill: Bill) => async (dispatch: any) =
   }
 };
 
-export const closeBill = (db: Firestore, billId: string, data: Bill) => async (dispatch: any) => {
-  const batch = writeBatch(db);
+export const closeBill = (billId: string, data: Bill) => async (dispatch: any) => {
+  const batch = writeBatch(defaultDb);
   try {
-    const billRef = doc(db, 'bills', billId);
-    const tableRef = doc(db, 'tables', String(data.tableId));
+    const billRef = doc(defaultDb, 'bills', billId);
+    const tableRef = doc(defaultDb, 'tables', String(data.tableId));
     batch.update(billRef, { ...data, status: 'Paid' });
     batch.update(tableRef, { status: 'Free' });
     await batch.commit();
@@ -93,9 +94,9 @@ export const closeBill = (db: Firestore, billId: string, data: Bill) => async (d
   }
 };
 
-export const cancelItem = (db: Firestore, itemId: string, billId: string) => async (dispatch: any) => {
+export const cancelItem = (itemId: string, billId: string) => async (dispatch: any) => {
   try {
-    await updateDocument(db, `bills/${billId}/items`, itemId, { isCanceled: true });
+    await updateDocument(`bills/${billId}/items`, itemId, { isCanceled: true });
     console.log(`Item ${itemId} cancelado com sucesso.`);
     dispatch(calculateSubtotal());
   } catch (error) {

@@ -2,11 +2,11 @@ import React, { useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { Container, Grid, Card, CardContent, Typography, Button, CircularProgress } from '@mui/material';
-import { setBill, setItems, setLoading, calculateSubtotal } from '../../stores/BillSlice';
+import { setBill, setItems, setLoading, calculateSubtotal, cancelItem } from '../../stores/BillSlice';
 import { listenToCollection } from '../../services/FirebaseService';
 import { Bill } from '../../models/BillSchema';
 import { collectionNames } from '../../config/firebaseConfig';
-import { cancelItem } from '../../services/BillService';
+
 
 function BillDetails() {
   const { id } = useParams<{ id: string }>();    
@@ -20,7 +20,7 @@ function BillDetails() {
 
     const collectionNameItems = `${collectionNames.bills}/${id}/${collectionNames.orderItems}`;
     const unsubscribeItems = listenToCollection(collectionNameItems, (data) => {
-      dispatch(setItems(data));
+      dispatch(setItems(data));'  '
       dispatch(calculateSubtotal());
       dispatch(setLoading(false));
     });
@@ -39,8 +39,7 @@ function BillDetails() {
   }, [dispatch, id]);
 
   const handleCancelItem = async (itemId: string) => {
-    await cancelItem(itemId, id);
-    dispatch(calculateSubtotal());
+    dispatch(cancelItem(itemId, id));
   };
 
   if (loading) {

@@ -3,11 +3,11 @@ import { TextField, Button, Container, Typography, Box, MenuItem } from "@mui/ma
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
-import { createDocument, updateDocument, listenToCollection } from "../FirebaseService";
-import { ProductSchema } from "../Models/ProductSchema";
-const nameCollection = "products";
+import { createDocument, updateDocument, listenToCollection } from "../../services/FirebaseService";
+import { ProductSchema } from "../../models/ProductSchema";
+import { collectionNames } from "../../config/firebaseConfig";
 
-function ProductForm({ db }) {
+function ProductForm() {
   const { id } = useParams(); // Para diferenciar entre criação e edição
   const navigate = useNavigate();
   const location = useLocation();
@@ -19,7 +19,7 @@ function ProductForm({ db }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribeCategories = listenToCollection(db, "categories", (data) => {
+    const unsubscribeCategories = listenToCollection(collectionNames.categories, (data) => {
       setCategories(data);
       setLoading(false);
     });
@@ -32,16 +32,16 @@ function ProductForm({ db }) {
     return () => {
       unsubscribeCategories();
     };
-  }, [db, id, location.state, setValue]);
+  }, [id, location.state, setValue]);
 
   async function onSubmit(data) {
     try {
       if (id) {        
-        await updateDocument("db", nameCollection, id, data);
+        await updateDocument(collectionNames.categories, id, data);
       } else {        
-        await createDocument("db", nameCollection, data);
+        await createDocument(collectionNames.categories, data);
       }
-      navigate("/products"); // Volta para a lista de produtos
+      navigate("/ProductList"); // Volta para a lista de produtos
     } catch (error) {
       console.error("Erro ao salvar produto:", error);
     }

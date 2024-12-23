@@ -1,24 +1,25 @@
 import React, { useEffect, useState } from "react";
 import { Box, Grid, CircularProgress } from "@mui/material";
-import TableCard from "./TableCard";
+import TableCard from "../../Components/TableCard";
 import { useNavigate } from 'react-router-dom';
 import { listenToCollection } from '../../FirebaseService';
-import { Firestore, where, orderBy } from 'firebase/firestore';
+import { where, orderBy } from 'firebase/firestore';
+import { collectionNames } from "../../firebaseConfig";
+const collectionName = collectionNames.bills;
 
 interface OpenBillsProps {
-  db: Firestore;
   backgroundColor: string;
   textColor: string;
   destinationUrl: string; // URL base para navegação ao clicar em uma comanda
 }
 
-function OpenBills({ db, backgroundColor, textColor, destinationUrl }: OpenBillsProps) {
+function OpenBills({ backgroundColor, textColor, destinationUrl }: OpenBillsProps) {
   const navigate = useNavigate();
   const [openBills, setOpenBills] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = listenToCollection(db,'bills',(data) => {
+    const unsubscribe = listenToCollection(collectionNames.bills, (data) => {
         setOpenBills(data);
         setLoading(false);
       },
@@ -28,7 +29,7 @@ function OpenBills({ db, backgroundColor, textColor, destinationUrl }: OpenBills
     return () => {
       unsubscribe();
     };
-  }, [db]);
+  }, []);
 
   const handleSelectBill = (bill: any) => {
     navigate(`${destinationUrl}/${bill.id}`);

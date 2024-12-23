@@ -3,15 +3,7 @@ import { useDispatch } from "react-redux";
 import { setSelectedProduct } from "../store/orderSlice";
 import { useNavigate } from "react-router-dom";
 import { listenToCollection } from "../FirebaseService";
-import {
-  Card,
-  CardContent,
-  Typography,
-  Button,
-  Grid,
-  Container,
-  CircularProgress,
-} from "@mui/material";
+import {  Card,  CardContent,  Typography,  Button,  Grid,  Container,  CircularProgress} from "@mui/material";
 
 function SelectItemForOrder({ db }) {
   const dispatch = useDispatch();
@@ -29,7 +21,7 @@ function SelectItemForOrder({ db }) {
 
   const handleSelectProduct = (product) => {
     dispatch(setSelectedProduct(product));
-    navigate("/create-item");
+    navigate("/CreateOrderItem");
   };
 
   return (

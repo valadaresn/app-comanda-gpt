@@ -5,8 +5,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { BillSchema, Bill } from '../../models/BillSchema';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { calculateFinalValue, clearBillState } from '../../stores/BillSlice';
-import { closeBill } from '../../services/BillService';
+import { closeBill, calculateFinalValue } from '../../stores/BillSlice';
 
 function CheckoutBill() {
   const { id } = useParams<{ id: string }>();
@@ -18,10 +17,10 @@ function CheckoutBill() {
   });
   const bill = useSelector((state: any) => state.bill.bill);
   const loading = useSelector((state: any) => state.bill.loading);
-  const subTotal = useSelector((state: any) => state.bill.subTotal);
 
   const discount = watch('discount');
   const serviceCharge = watch('serviceCharge');
+  const subTotal = bill?.subTotal || 0;
 
   useEffect(() => {
     dispatch(calculateFinalValue());
@@ -29,8 +28,7 @@ function CheckoutBill() {
 
   const onSubmit = async (data: Bill) => {
     try {
-      await closeBill(id, data);
-      dispatch(clearBillState());
+      await dispatch(closeBill(id, data));
       navigate('/OpenBills');
     } catch (error) {
       console.error('Erro ao encerrar a comanda:', error);

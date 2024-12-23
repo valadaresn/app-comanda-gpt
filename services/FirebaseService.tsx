@@ -1,7 +1,5 @@
 import { Firestore, collection, addDoc, onSnapshot, updateDoc, deleteDoc, doc, query, QueryConstraint } from "firebase/firestore";
-
-// Banco de dados padrão
-const defaultDb: Firestore = /* Inicialização do Firestore */;
+import { defaultDb } from '../config/firebaseConfig';
 
 // Função genérica para escuta em tempo real
 export const listenToCollection = (

@@ -3,9 +3,9 @@ import { TextField, Button, Container, Typography, Box } from "@mui/material";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate, useParams } from "react-router-dom";
-import { createDocument, updateDocument } from "../FirebaseService";
-import { CategorySchema } from "../CategorySchema";
-const nameCollection = "categories";
+import { createDocument, updateDocument } from "../../services/FirebaseService";
+import { CategorySchema } from "../../models/CategorySchema";
+import { collectionNames } from "../../config/firebaseConfig";
 
 function CategoryForm() {
   const { id } = useParams(); // Para diferenciar entre criação e edição
@@ -17,11 +17,11 @@ function CategoryForm() {
   const onSubmit = async (data) => {
     try {
       if (id) {        
-        await updateDocument("db", nameCollection, id, data);
+        await updateDocument(collectionNames.categories, id, data);
       } else {        
-        await createDocument("db", nameCollection, data);
+        await createDocument(collectionNames.categories, data);
       }
-      navigate("/categories"); // Volta para a lista de categorias
+      navigate("/CategoryList"); // Volta para a lista de categorias
     } catch (error) {
       console.error("Erro ao salvar categoria:", error);
     }
