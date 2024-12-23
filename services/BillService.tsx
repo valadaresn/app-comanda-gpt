@@ -1,13 +1,13 @@
-import { writeBatch, doc } from 'firebase/firestore';
+import { writeBatch, doc, updateDoc } from 'firebase/firestore';
 import { defaultDb } from '../config/firebaseConfig';
 import { Bill } from '../models/BillSchema';
-import { updateDocument } from '../services/FirebaseService';
 
+// Método para criar uma comanda
 export const createBill = async (bill: Bill) => {
   const batch = writeBatch(defaultDb);
   try {
     const billRef = doc(defaultDb, 'bills', bill.id);
-    const tableRef = doc(defaultDb, 'tables', String(bill.tableId));
+    const tableRef = doc(defaultDb, 'tables', bill.tableId); // Usa o valor numérico diretamente
     batch.set(billRef, bill);
     batch.update(tableRef, { status: 'Occupied' });
     await batch.commit();
@@ -18,11 +18,12 @@ export const createBill = async (bill: Bill) => {
   }
 };
 
+// Método para encerrar uma comanda
 export const closeBill = async (billId: string, data: Bill) => {
   const batch = writeBatch(defaultDb);
   try {
     const billRef = doc(defaultDb, 'bills', billId);
-    const tableRef = doc(defaultDb, 'tables', String(data.tableId));
+    const tableRef = doc(defaultDb, 'tables', data.tableId); // Usa o valor numérico diretamente
     batch.update(billRef, { ...data, status: 'Paid' });
     batch.update(tableRef, { status: 'Free' });
     await batch.commit();
@@ -33,12 +34,14 @@ export const closeBill = async (billId: string, data: Bill) => {
   }
 };
 
-export const cancelItem = async (itemId: string, billId: string) => {
+// Método para cancelar um item no Firebase
+export async function cancelItem(itemId: string, billId: string) {
   try {
-    await updateDocument(`bills/${billId}/items`, itemId, { isCanceled: true });
+    const itemRef = doc(defaultDb, `bills/${billId}/items`, itemId); // Caminho ajustado para "bills"
+    await updateDoc(itemRef, { isCanceled: true });
     console.log(`Item ${itemId} cancelado com sucesso.`);
   } catch (error) {
     console.error("Erro ao cancelar o item:", error);
     throw new Error("Falha ao cancelar o item.");
   }
-};
+}
